@@ -87,11 +87,11 @@ class ChoroplethMap {
     // Defines the scale of the projection so that the geometry fits within the SVG area
     vis.projection.fitSize([vis.width, vis.height], vis.data);
 
-    // Append world map
-    const countryPath = vis.chart.selectAll('.country')
+    // Append us map of counties
+    const countyPath = vis.chart.selectAll('.county')
         .data(vis.data["features"])
       .join('path')
-        .attr('class', 'country')
+        .attr('class', 'county')
         .attr('d', vis.geoPath)
         .attr('fill', d => {
           if (d.properties.pop_list) {
@@ -101,7 +101,7 @@ class ChoroplethMap {
           }
         });
 
-        countryPath
+        countyPath
         .on('mousemove', (event,d) => {
           const pop = (d.properties.pop_list[10] / d.properties.pop_list[0]) ? `Population: <strong>${(d.properties.pop_list[10]/ d.properties.pop_list[0])}</strong>` : 'No data available'; 
           d3.select('#tooltip')
