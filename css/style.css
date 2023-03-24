@@ -1,8 +1,16 @@
-body {
+  body {
     font-family: Helvetica, sans-serif;
     padding: 20px 40px;
   }
   
+  .map {
+    float: left;
+  }
+
+  .barchart {
+    float: left;
+  }
+
   .country:hover {
     stroke: #333;
   }
