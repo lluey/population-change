@@ -39,7 +39,8 @@ class ChoroplethMap {
     // Append group element that will contain our actual chart 
     // and position it according to the given margin config
     vis.chart = vis.svg.append('g')
-        .attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`);
+        .attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`)
+        .attr('class', 'map')
 
     // Initialize projection and path generator
     vis.projection = d3.geoAlbersUsa();
@@ -70,8 +71,7 @@ class ChoroplethMap {
       } else {
         return 1
       }
-    });
-    
+    }); 
 
     // Update color scale
     vis.colorScale.domain([popExtent[0], 1, popExtent[1]]);
