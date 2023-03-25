@@ -48,8 +48,8 @@ class ChoroplethMap {
     vis.projection = d3.geoAlbersUsa();
     vis.geoPath = d3.geoPath().projection(vis.projection);
 
-    vis.colorScale = d3.scaleSequential()
-        .interpolator(d3.interpolateViridis)
+    vis.colorScale = d3.scaleDiverging()
+        .interpolator(d3.interpolateRdBu)
 
     // Initialize gradient that we will later use for the legend
     vis.linearGradient = vis.svg.append('defs').append('linearGradient')
@@ -87,34 +87,22 @@ class ChoroplethMap {
       }
     };
 
-    vis.fillValue = d => {
-      if (vis.validRange(d)) {
-        if (d === vis.selectedCounty) {
-          return 'white';
-        } else {
-          return vis.colorScale(vis.ratioValue(d));
-        }
-      } else {
-        return 'url(#lightstripe)';
-      }
-    };
+    vis.fillValue = d => vis.validRange(d)? vis.colorScale(vis.ratioValue(d)) : 'url(#lightstripe)';
 
-    // vis.popExtent = d3.extent(vis.data["features"], d => {
-    //   if(vis.validRange(d)) {
-    //     return vis.ratioValue(d)
-    //   } else {
-    //     return 1
-    //   }
-    // });
+    vis.deviation = d3.deviation(vis.data["features"], d => {
+      if(vis.validRange(d)) {
+        return vis.ratioValue(d)
+      } else {
+        return 1
+      }
+    });
 
     // Update color scale
-    // vis.colorScale.domain([vis.popExtent[0], 1, vis.popExtent[1]]);
-    // vis.colorScale.domain(vis.popExtent);
-    vis.colorScale.domain([0.67, 1.5])
+    vis.colorScale.domain([Math.max(1-3*vis.deviation, 0), 1,  1+3*vis.deviation]);
 
     // legend using d3 colors from: https://stackoverflow.com/questions/70829892/create-d3-linear-color-legend-using-d3-colors
     // Define begin and end of the color gradient (legend)
-    vis.legendStops = d3.range(10).map(d => ({color:d3.interpolateViridis(d/10), value: d}))
+    vis.legendStops = d3.range(10).map(d => ({color:d3.interpolateRdBu(d/10), value: d}))
 
     vis.renderVis();
   }
@@ -122,7 +110,6 @@ class ChoroplethMap {
 
   renderVis() {
     let vis = this;
-
 
     // Defines the scale of the projection so that the geometry fits within the SVG area
     vis.projection.fitSize([vis.width, vis.height], vis.data);
@@ -163,7 +150,7 @@ class ChoroplethMap {
                   d3.select(".county")
                       .text(d.properties.NAME)
                 }
-                vis.renderVis()
+                vis.updateVis()
                 d3.select('#tooltip').style('display', 'none');
               }
             })
@@ -177,7 +164,7 @@ class ChoroplethMap {
         .attr('dy', '.35em')
         .attr('y', 20)
         .attr('x', (d,index) => {
-          return index == 0 ? 0 : vis.config.legendRectWidth;
+          return (index === 0)? 0 : (index === 1)? vis.config.legendRectWidth/2 : vis.config.legendRectWidth;
         })
         .text(d => d.toFixed(2));
 
