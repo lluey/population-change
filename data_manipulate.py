@@ -15,6 +15,7 @@ with open("data/usa_geo.json", encoding = "ISO-8859-1") as geojson, open("data/c
                     output.append(int(pop_row[f"POPESTIMATE{i}"]))
                 
                 feature["properties"]["pop_list"] = output.copy()
+                feature["properties"]["STNAME"] = pop_row["STNAME"]
 
 
     with open("data/dataset_usa_geo_pop_list.json", "w+") as outfile:
