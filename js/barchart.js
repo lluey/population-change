@@ -62,7 +62,6 @@ class Barchart {
         .range([0, vis.width]);
 
     vis.yScale = d3.scaleBand()
-        .range([0, vis.height])
         .paddingInner(0.15);
 
     // Initialize axes
@@ -70,7 +69,6 @@ class Barchart {
         .tickSizeOuter(1);
 
     vis.yAxis = d3.axisLeft(vis.yScale)
-        .ticks(3006)
         .tickSizeOuter(1);
 
     // Append empty x-axis group and move it to the bottom of the chart
@@ -131,8 +129,9 @@ class Barchart {
     // console.log(vis.data.features[0])
     // Set the scale input domains
     vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
-    vis.yScale.domain(vis.new_data.map(vis.yValue));
-    
+    vis.yScale.domain(vis.new_data.map(vis.yValue))
+      .range([0, vis.new_data.length * 15])
+
     vis.renderVis();
   }
 
