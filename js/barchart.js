@@ -9,7 +9,7 @@ class Barchart {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 1000,
+    containerHeight: _config.containerHeight || 3000,
     margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 100},
     tooltipPadding: 10,
     legendBottom: 50,
@@ -111,6 +111,9 @@ class Barchart {
             return d.properties.NAME + ", " + d.properties.STNAME
         }
     }
+
+
+
     console.log("BEFORE:")
     console.log(vis.data.features)
     vis.new_data = [];
@@ -120,6 +123,12 @@ class Barchart {
         console.log("PUSHED")
       }
     });
+
+    vis.new_data.sort(function(x, y){
+      if (vis.validRange(x) && vis.validRange(y)) {
+        return d3.ascending(vis.ratioValue(y), vis.ratioValue(x));
+      }
+    })
 
     console.log("NEW:")
     console.log(vis.data)
