@@ -5,7 +5,7 @@ class ChoroplethMap {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _data) {
+  constructor(_config, _dispatcher, _data) {
     this.config = {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
@@ -18,12 +18,13 @@ class ChoroplethMap {
       legendRectWidth: 150
     }
     this.data = _data;
+    this.dispatcher = _dispatcher;
     this.startYear = 0;
     this.endYear = 10;
     this.selectedCounty = null;
     this.initVis();
   }
-  
+
   /**
    * We initialize scales/axes and append static elements, such as axis titles.
    */
@@ -140,7 +141,7 @@ class ChoroplethMap {
         });
 
         countyPath
-            .on('click', (event, d) => {
+            .on('click', (e, d) => {
               if(vis.validRange(d)) {
                 if (d === vis.selectedCounty) {
                   vis.selectedCounty = null;
@@ -151,6 +152,7 @@ class ChoroplethMap {
                   d3.select(".county")
                       .text(d.properties.NAME)
                 }
+                vis.dispatcher.call('selectCounty', e, vis.selectedCounty)
                 vis.updateVis()
                 d3.select('#tooltip').style('display', 'none');
               }

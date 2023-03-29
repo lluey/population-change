@@ -5,24 +5,39 @@ class Barchart {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _data) {
+  constructor(_config, _dispatcher, _data) {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 50000,
+    containerHeight: _config.containerHeight || 1000,
     margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 100},
     tooltipPadding: 10,
     legendBottom: 50,
     legendLeft: 50,
-    legendRectHeight: 12, 
+    legendRectHeight: 12,
     legendRectWidth: 150
     }
     this.data = _data;
+    this.dispatcher = _dispatcher
     this.initVis();
   }
-  
+
   initVis() {
+
     let vis = this;
+
+    vis.selected = "01"
+    vis.new_data = [];
+
+    vis.dispatcher.on("selectCounty", county => {
+      if (county != null) {
+        vis.selected = county.properties.STATE
+      } else {
+        vis.selected = "01"
+      }
+      vis.updateVis()
+      console.log("DISPATCHER")
+    });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
     vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
@@ -72,25 +87,38 @@ class Barchart {
     let vis = this;
 
     function popExists(d) {
-        if(d.properties.pop_list) {
-            return d.properties.pop_list[10] / d.properties.pop_list[0]
-        } else {
-            return 1
-        }
-      };
+      if(d.properties.pop_list) {
+          return d.properties.pop_list[10] / d.properties.pop_list[0]
+      } else {
+          return 1
+      }
+    };
 
     function aggregateName(d) {
         if(d.properties.NAME && d.properties.STNAME) {
             return d.properties.NAME + ", " + d.properties.STNAME
         }
     }
+    console.log("BEFORE:")
+    console.log(vis.data.features)
+    vis.new_data = [];
+    vis.data.features.forEach(feature => {
+      if (String(feature.properties.STATE) == vis.selected && popExists(feature)) {
+        vis.new_data.push(feature)
+        console.log("PUSHED")
+      }
+    });
+
+    // vis.data = vis.new_data
+    console.log("NEW:")
+    console.log(vis.data)
 
     vis.xValue = d => popExists(d)
     vis.yValue = d => aggregateName(d)
-    console.log(vis.data.features[0].properties.NAME)
+    // console.log(vis.data.features[0])
     // Set the scale input domains
-    vis.xScale.domain([0, d3.max(vis.data.features, vis.xValue)]);
-    vis.yScale.domain(vis.data.features.map(vis.yValue));
+    vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
+    vis.yScale.domain(vis.new_data.map(vis.yValue));
     
     vis.renderVis();
   }
@@ -100,7 +128,7 @@ class Barchart {
 
     // Add rectangles
     vis.chart.selectAll('.bar')
-        .data(vis.data.features)
+        .data(vis.new_data)
         .join('rect')
         .attr('class', 'bar')
         .attr('width', d => vis.xScale(vis.xValue(d)))
@@ -108,7 +136,7 @@ class Barchart {
         .attr('y', d => vis.yScale(vis.yValue(d)))
         .attr('x', 0)
         .on('mousemove', (event,d) => {
-            const pop = (d.properties.pop_list[10] / d.properties.pop_list[0]) ? `Population: <strong>${(d.properties.pop_list[10]/ d.properties.pop_list[0])}</strong>` : 'No data available'; 
+            const pop = (d.properties.pop_list[10] / d.properties.pop_list[0]) ? `Population: <strong>${(d.properties.pop_list[10]/ d.properties.pop_list[0])}</strong>` : 'No data available';
             d3.select('#tooltip')
               .style('display', 'block')
               .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')   
