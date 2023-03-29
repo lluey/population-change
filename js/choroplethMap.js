@@ -31,6 +31,20 @@ class ChoroplethMap {
   initVis() {
     let vis = this;
 
+    vis.dispatcher.on("bar_selectCounty", county => {
+      if (county != null) {
+        vis.selectedCounty = county
+        d3.select(".county")
+          .text(vis.selectedCounty.properties.NAME)
+      } else {
+        vis.selected = null // placeholder
+        d3.select(".county")
+          .text("Overall")
+      }
+      vis.updateVis()
+      console.log("DISPATCHER")
+    });
+
     // Calculate inner chart size. Margin specifies the space around the actual chart.
     vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
@@ -152,7 +166,7 @@ class ChoroplethMap {
                   d3.select(".county")
                       .text(d.properties.NAME)
                 }
-                vis.dispatcher.call('selectCounty', e, vis.selectedCounty)
+                vis.dispatcher.call('chor_selectCounty', e, vis.selectedCounty)
                 vis.updateVis()
                 d3.select('#tooltip').style('display', 'none');
               }

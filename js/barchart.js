@@ -19,6 +19,9 @@ class Barchart {
     }
     this.data = _data;
     this.dispatcher = _dispatcher
+    this.startYear = 0;
+    this.endYear = 10;
+    this.selectedCounty = null;
     this.initVis();
   }
 
@@ -29,11 +32,11 @@ class Barchart {
     vis.selected = "01"
     vis.new_data = [];
 
-    vis.dispatcher.on("selectCounty", county => {
+    vis.dispatcher.on("chor_selectCounty", county => {
       if (county != null) {
         vis.selected = county.properties.STATE
       } else {
-        vis.selected = "01"
+        vis.selected = "01" // placeholder
       }
       vis.updateVis()
       console.log("DISPATCHER")
@@ -86,8 +89,19 @@ class Barchart {
   updateVis() {
     let vis = this;
 
+    vis.validRange = d => d.properties.pop_list && d.properties.pop_list[vis.endYear] && d.properties.pop_list[vis.startYear]
+    vis.ratioValue = d => {
+      const yearRatio = d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear];
+      if (vis.selectedCounty == null){
+        return yearRatio;
+      } else {
+        const selectedYearRatio = vis.selectedCounty.properties.pop_list[vis.endYear] / vis.selectedCounty.properties.pop_list[vis.startYear];
+        return yearRatio/selectedYearRatio;
+      }
+    };
+
     function popExists(d) {
-      if(d.properties.pop_list) {
+      if(vis.validRange(d)) {
           return d.properties.pop_list[10] / d.properties.pop_list[0]
       } else {
           return 1
@@ -103,13 +117,12 @@ class Barchart {
     console.log(vis.data.features)
     vis.new_data = [];
     vis.data.features.forEach(feature => {
-      if (String(feature.properties.STATE) == vis.selected && popExists(feature)) {
+      if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
         vis.new_data.push(feature)
         console.log("PUSHED")
       }
     });
 
-    // vis.data = vis.new_data
     console.log("NEW:")
     console.log(vis.data)
 
@@ -135,21 +148,35 @@ class Barchart {
         .attr('height', vis.yScale.bandwidth())
         .attr('y', d => vis.yScale(vis.yValue(d)))
         .attr('x', 0)
-        .on('mousemove', (event,d) => {
-            const pop = (d.properties.pop_list[10] / d.properties.pop_list[0]) ? `Population: <strong>${(d.properties.pop_list[10]/ d.properties.pop_list[0])}</strong>` : 'No data available';
-            d3.select('#tooltip')
-              .style('display', 'block')
-              .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')   
-              .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
-              .html(`
-                <div class="tooltip-title">${d.properties.NAME}</div>
-                <div>${pop}</div>
-              `);
-          })
-          .on('mouseleave', () => {
+        .on('click', (e, d) => {
+          if(vis.validRange(d)) {
+            if (d === vis.selectedCounty) {
+              vis.selectedCounty = null;
+              vis.selected = "01"  // placeholder
+            } else {
+              vis.selectedCounty = d;
+              vis.selected = vis.selectedCounty.properties.STATE
+            }
+            vis.dispatcher.call('bar_selectCounty', e, vis.selectedCounty)
+            vis.updateVis()
             d3.select('#tooltip').style('display', 'none');
-          });
-    
+          }
+        })
+        .on('mousemove', (event,d) => {
+          const pop = (vis.validRange(d)) ? `Change in Population: <strong>${(vis.ratioValue(d).toFixed(2))}</strong>` : 'No data available';
+          d3.select('#tooltip')
+            .style('display', 'block')
+            .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')
+            .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
+            .html(`
+              <div class="tooltip-title">${d.properties.NAME}</div>
+              <div>${pop}</div>
+            `);
+        })
+        .on('mouseleave', () => {
+          d3.select('#tooltip').style('display', 'none');
+        });
+
     // Update the axes because the underlying scales might have changed
     vis.xAxisG.call(vis.xAxis);
     vis.yAxisG.call(vis.yAxis);
