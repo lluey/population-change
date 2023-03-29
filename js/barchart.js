@@ -5,24 +5,42 @@ class Barchart {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _data) {
+  constructor(_config, _dispatcher, _data) {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 50000,
+    containerHeight: _config.containerHeight || 3000,
     margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 100},
     tooltipPadding: 10,
     legendBottom: 50,
     legendLeft: 50,
-    legendRectHeight: 12, 
+    legendRectHeight: 12,
     legendRectWidth: 150
     }
     this.data = _data;
+    this.dispatcher = _dispatcher
+    this.startYear = 0;
+    this.endYear = 10;
+    this.selectedCounty = null;
     this.initVis();
   }
-  
+
   initVis() {
+
     let vis = this;
+
+    vis.selected = "01"
+    vis.new_data = [];
+
+    vis.dispatcher.on("chor_selectCounty", county => {
+      if (county != null) {
+        vis.selected = county.properties.STATE
+      } else {
+        vis.selected = "01" // placeholder
+      }
+      vis.updateVis()
+      console.log("DISPATCHER")
+    });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
     vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
@@ -44,7 +62,6 @@ class Barchart {
         .range([0, vis.width]);
 
     vis.yScale = d3.scaleBand()
-        .range([0, vis.height])
         .paddingInner(0.15);
 
     // Initialize axes
@@ -52,7 +69,6 @@ class Barchart {
         .tickSizeOuter(1);
 
     vis.yAxis = d3.axisLeft(vis.yScale)
-        .ticks(3006)
         .tickSizeOuter(1);
 
     // Append empty x-axis group and move it to the bottom of the chart
@@ -71,13 +87,24 @@ class Barchart {
   updateVis() {
     let vis = this;
 
+    vis.validRange = d => d.properties.pop_list && d.properties.pop_list[vis.endYear] && d.properties.pop_list[vis.startYear]
+    vis.ratioValue = d => {
+      const yearRatio = d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear];
+      if (vis.selectedCounty == null){
+        return yearRatio;
+      } else {
+        const selectedYearRatio = vis.selectedCounty.properties.pop_list[vis.endYear] / vis.selectedCounty.properties.pop_list[vis.startYear];
+        return yearRatio/selectedYearRatio;
+      }
+    };
+
     function popExists(d) {
-        if(d.properties.pop_list) {
-            return d.properties.pop_list[10] / d.properties.pop_list[0]
-        } else {
-            return 1
-        }
-      };
+      if(vis.validRange(d)) {
+          return d.properties.pop_list[10] / d.properties.pop_list[0]
+      } else {
+          return 1
+      }
+    };
 
     function aggregateName(d) {
         if(d.properties.NAME && d.properties.STNAME) {
@@ -85,13 +112,35 @@ class Barchart {
         }
     }
 
+
+
+    console.log("BEFORE:")
+    console.log(vis.data.features)
+    vis.new_data = [];
+    vis.data.features.forEach(feature => {
+      if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
+        vis.new_data.push(feature)
+        console.log("PUSHED")
+      }
+    });
+
+    vis.new_data.sort(function(x, y){
+      if (vis.validRange(x) && vis.validRange(y)) {
+        return d3.ascending(vis.ratioValue(y), vis.ratioValue(x));
+      }
+    })
+
+    console.log("NEW:")
+    console.log(vis.data)
+
     vis.xValue = d => popExists(d)
     vis.yValue = d => aggregateName(d)
-    console.log(vis.data.features[0].properties.NAME)
+    // console.log(vis.data.features[0])
     // Set the scale input domains
-    vis.xScale.domain([0, d3.max(vis.data.features, vis.xValue)]);
-    vis.yScale.domain(vis.data.features.map(vis.yValue));
-    
+    vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
+    vis.yScale.domain(vis.new_data.map(vis.yValue))
+      .range([0, vis.new_data.length * 15])
+
     vis.renderVis();
   }
 
@@ -100,28 +149,42 @@ class Barchart {
 
     // Add rectangles
     vis.chart.selectAll('.bar')
-        .data(vis.data.features)
+        .data(vis.new_data)
         .join('rect')
         .attr('class', 'bar')
         .attr('width', d => vis.xScale(vis.xValue(d)))
         .attr('height', vis.yScale.bandwidth())
         .attr('y', d => vis.yScale(vis.yValue(d)))
         .attr('x', 0)
-        .on('mousemove', (event,d) => {
-            const pop = (d.properties.pop_list[10] / d.properties.pop_list[0]) ? `Population: <strong>${(d.properties.pop_list[10]/ d.properties.pop_list[0])}</strong>` : 'No data available'; 
-            d3.select('#tooltip')
-              .style('display', 'block')
-              .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')   
-              .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
-              .html(`
-                <div class="tooltip-title">${d.properties.NAME}</div>
-                <div>${pop}</div>
-              `);
-          })
-          .on('mouseleave', () => {
+        .on('click', (e, d) => {
+          if(vis.validRange(d)) {
+            if (d === vis.selectedCounty) {
+              vis.selectedCounty = null;
+              vis.selected = "01"  // placeholder
+            } else {
+              vis.selectedCounty = d;
+              vis.selected = vis.selectedCounty.properties.STATE
+            }
+            vis.dispatcher.call('bar_selectCounty', e, vis.selectedCounty)
+            vis.updateVis()
             d3.select('#tooltip').style('display', 'none');
-          });
-    
+          }
+        })
+        .on('mousemove', (event,d) => {
+          const pop = (vis.validRange(d)) ? `Change in Population: <strong>${(vis.ratioValue(d).toFixed(2))}</strong>` : 'No data available';
+          d3.select('#tooltip')
+            .style('display', 'block')
+            .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')
+            .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
+            .html(`
+              <div class="tooltip-title">${d.properties.NAME}</div>
+              <div>${pop}</div>
+            `);
+        })
+        .on('mouseleave', () => {
+          d3.select('#tooltip').style('display', 'none');
+        });
+
     // Update the axes because the underlying scales might have changed
     vis.xAxisG.call(vis.xAxis);
     vis.yAxisG.call(vis.yAxis);
