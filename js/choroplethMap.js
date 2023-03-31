@@ -5,7 +5,7 @@ class ChoroplethMap {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _dispatcher, _data) {
+  constructor(_config, _dispatcher, _data, _slider) {
     this.config = {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
@@ -22,6 +22,7 @@ class ChoroplethMap {
     this.startYear = 0;
     this.endYear = 10;
     this.selectedCounty = null;
+    this.slider = _slider;
     this.initVis();
   }
 
@@ -91,6 +92,12 @@ class ChoroplethMap {
 
   updateVis() {
     let vis = this;
+
+    let startYear = parseInt(this.slider.getValue().split(",")[0]) - 2010
+    let endYear = parseInt(this.slider.getValue().split(",")[1]) - 2010
+
+    vis.endYear = endYear
+    vis.startYear = startYear
 
     vis.validRange = d => d.properties.pop_list && d.properties.pop_list[vis.endYear] && d.properties.pop_list[vis.startYear]
     vis.ratioValue = d => {
@@ -194,6 +201,5 @@ class ChoroplethMap {
         .attr('stop-color', d => d.color);
 
     vis.legendRect.attr('fill', 'url(#legend-gradient)')
-
   }
 }

@@ -5,7 +5,7 @@ class Barchart {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _dispatcher, _data) {
+  constructor(_config, _dispatcher, _data, _slider) {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
@@ -22,12 +22,15 @@ class Barchart {
     this.startYear = 0;
     this.endYear = 10;
     this.selectedCounty = null;
+    this.slider = _slider;
     this.initVis();
   }
 
   initVis() {
 
     let vis = this;
+
+    // vis.slider.onChange = () => vis.updateVis()
 
     vis.selected = "01"
     vis.new_data = [];
@@ -87,6 +90,12 @@ class Barchart {
   updateVis() {
     let vis = this;
 
+    let startYear = parseInt(this.slider.getValue().split(",")[0]) - 2010
+    let endYear = parseInt(this.slider.getValue().split(",")[1]) - 2010
+
+    vis.startYear = startYear
+    vis.endYear = endYear
+
     vis.validRange = d => d.properties.pop_list && d.properties.pop_list[vis.endYear] && d.properties.pop_list[vis.startYear]
     vis.ratioValue = d => {
       const yearRatio = d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear];
@@ -100,7 +109,7 @@ class Barchart {
 
     function popExists(d) {
       if(vis.validRange(d)) {
-          return d.properties.pop_list[10] / d.properties.pop_list[0]
+          return d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear]
       } else {
           return 1
       }
@@ -115,7 +124,7 @@ class Barchart {
 
 
     console.log("BEFORE:")
-    console.log(vis.data.features)
+    // console.log(vis.data.features)
     vis.new_data = [];
     vis.data.features.forEach(feature => {
       if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
@@ -131,7 +140,7 @@ class Barchart {
     })
 
     console.log("NEW:")
-    console.log(vis.data)
+    // console.log(vis.data)
 
     vis.xValue = d => popExists(d)
     vis.yValue = d => aggregateName(d)
