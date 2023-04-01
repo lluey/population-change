@@ -5,7 +5,7 @@ class ChoroplethMap {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _data) {
+  constructor(_config, _dispatcher, _data, _slider) {
     this.config = {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
@@ -18,17 +18,33 @@ class ChoroplethMap {
       legendRectWidth: 150
     }
     this.data = _data;
+    this.dispatcher = _dispatcher;
     this.startYear = 0;
     this.endYear = 10;
     this.selectedCounty = null;
+    this.slider = _slider;
     this.initVis();
   }
-  
+
   /**
    * We initialize scales/axes and append static elements, such as axis titles.
    */
   initVis() {
     let vis = this;
+
+    vis.dispatcher.on("bar_selectCounty", county => {
+      if (county != null) {
+        vis.selectedCounty = county
+        d3.select(".county")
+          .text(vis.selectedCounty.properties.NAME)
+      } else {
+        vis.selected = null // placeholder
+        d3.select(".county")
+          .text("Overall")
+      }
+      vis.updateVis()
+      console.log("DISPATCHER")
+    });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
     vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
@@ -76,6 +92,12 @@ class ChoroplethMap {
 
   updateVis() {
     let vis = this;
+
+    let startYear = parseInt(this.slider.getValue().split(",")[0]) - 2010
+    let endYear = parseInt(this.slider.getValue().split(",")[1]) - 2010
+
+    vis.endYear = endYear
+    vis.startYear = startYear
 
     vis.validRange = d => d.properties.pop_list && d.properties.pop_list[vis.endYear] && d.properties.pop_list[vis.startYear]
     vis.ratioValue = d => {
@@ -140,7 +162,7 @@ class ChoroplethMap {
         });
 
         countyPath
-            .on('click', (event, d) => {
+            .on('click', (e, d) => {
               if(vis.validRange(d)) {
                 if (d === vis.selectedCounty) {
                   vis.selectedCounty = null;
@@ -151,6 +173,7 @@ class ChoroplethMap {
                   d3.select(".county")
                       .text(d.properties.NAME)
                 }
+                vis.dispatcher.call('chor_selectCounty', e, vis.selectedCounty)
                 vis.updateVis()
                 d3.select('#tooltip').style('display', 'none');
               }
@@ -178,6 +201,5 @@ class ChoroplethMap {
         .attr('stop-color', d => d.color);
 
     vis.legendRect.attr('fill', 'url(#legend-gradient)')
-
   }
 }
