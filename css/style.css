@@ -19,6 +19,11 @@
     float: left;
   }
 
+  .container {
+    height: 550px;
+    overflow-y: auto;
+  }
+
   .barchart {
     float: left;
   }
