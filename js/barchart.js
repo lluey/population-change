@@ -31,18 +31,19 @@ class Barchart {
     let vis = this;
 
     // vis.slider.onChange = () => vis.updateVis()
-
+    vis.selectedCounty = vis.data.features[0]
     vis.selected = "01"
     vis.new_data = [];
 
     vis.dispatcher.on("chor_selectCounty", county => {
       if (county != null) {
         vis.selected = county.properties.STATE
+        vis.selectedCounty = county
       } else {
         vis.selected = "01" // placeholder
+        vis.selectedCounty = null
       }
       vis.updateVis()
-      console.log("DISPATCHER")
     });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
@@ -59,6 +60,9 @@ class Barchart {
     vis.chart = vis.svg.append('g')
         .attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`)
         .attr('class', 'barchart')
+
+    vis.colorScale = d3.scaleDiverging()
+      .interpolator(d3.interpolateRdBu)
 
     // Initialize scales
     vis.xScale = d3.scaleLinear()
@@ -121,15 +125,11 @@ class Barchart {
         }
     }
 
-
-
-    console.log("BEFORE:")
-    // console.log(vis.data.features)
     vis.new_data = [];
     vis.data.features.forEach(feature => {
       if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
+
         vis.new_data.push(feature)
-        console.log("PUSHED")
       }
     });
 
@@ -139,12 +139,22 @@ class Barchart {
       }
     })
 
-    console.log("NEW:")
-    // console.log(vis.data)
+    vis.fillValue = d => vis.validRange(d)? vis.colorScale(vis.ratioValue(d)) : 'url(#lightstripe)';
+
+    vis.deviation = d3.deviation(vis.new_data, d => {
+      if(vis.validRange(d)) {
+        return vis.ratioValue(d)
+      } else {
+        return 1
+      }
+    });
+
+    // Update color scale
+    vis.colorScale.domain([Math.max(1-3*vis.deviation, 0), 1,  1+3*vis.deviation]);
 
     vis.xValue = d => popExists(d)
     vis.yValue = d => aggregateName(d)
-    // console.log(vis.data.features[0])
+
     // Set the scale input domains
     vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
     vis.yScale.domain(vis.new_data.map(vis.yValue))
@@ -165,6 +175,7 @@ class Barchart {
         .attr('height', vis.yScale.bandwidth())
         .attr('y', d => vis.yScale(vis.yValue(d)))
         .attr('x', 0)
+        .attr('fill', d => vis.fillValue(d))
         .on('click', (e, d) => {
           if(vis.validRange(d)) {
             if (d === vis.selectedCounty) {
