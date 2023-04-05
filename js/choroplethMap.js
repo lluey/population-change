@@ -43,7 +43,6 @@ class ChoroplethMap {
           .text("Overall")
       }
       vis.updateVis()
-      console.log("DISPATCHER")
     });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
