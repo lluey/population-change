@@ -9,8 +9,8 @@ class Barchart {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 3000,
-    margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 100},
+    containerHeight: _config.containerHeight || 550,
+    margin: _config.margin || {top: 30, right: 15, bottom: 15, left: 125},
     tooltipPadding: 10,
     legendBottom: 50,
     legendLeft: 50,
@@ -72,23 +72,20 @@ class Barchart {
         .paddingInner(0.15);
 
     // Initialize axes
-    vis.xAxis = d3.axisBottom(vis.xScale)
+    vis.xAxis = d3.axisTop(vis.xScale)
         .tickSizeOuter(1);
 
     vis.yAxis = d3.axisLeft(vis.yScale)
         .tickSizeOuter(1);
 
-    // Append empty x-axis group and move it to the bottom of the chart
+    // Append x-axis group
     vis.xAxisG = vis.chart.append('g')
-        .attr('class', 'axis x-axis')
-        .attr('transform', `translate(0,${vis.height})`);
-    
+        .attr('class', 'axis x-axis');
+
     // Append y-axis group 
     vis.yAxisG = vis.chart.append('g')
         .attr('class', 'axis y-axis');
 
-    // Append titles, legends and other static elements here
-    // ...
   }
 
   updateVis() {
@@ -117,7 +114,7 @@ class Barchart {
       } else {
           return 1
       }
-    };
+    }
 
     function aggregateName(d) {
         if(d.properties.NAME && d.properties.STNAME) {
@@ -139,7 +136,17 @@ class Barchart {
       }
     })
 
-    vis.fillValue = d => vis.validRange(d)? vis.colorScale(vis.ratioValue(d)) : 'url(#lightstripe)';
+    vis.fillValue = d => {
+      if (vis.validRange(d)) {
+        if (d === vis.selectedCounty) {
+          return 'yellow';
+        } else {
+          return vis.colorScale(vis.ratioValue(d));
+        }
+      } else {
+        return 'url(#lightstripe)';
+      }
+    };
 
     vis.deviation = d3.deviation(vis.new_data, d => {
       if(vis.validRange(d)) {
@@ -160,6 +167,8 @@ class Barchart {
     vis.yScale.domain(vis.new_data.map(vis.yValue))
       .range([0, vis.new_data.length * 15])
 
+    // Update scroll height
+    vis.svg.attr('height', vis.new_data.length*15)
     vis.renderVis();
   }
 
