@@ -30,9 +30,8 @@ class Barchart {
 
     let vis = this;
 
-    // vis.slider.onChange = () => vis.updateVis()
-    vis.selectedCounty = vis.data.features[0]
-    vis.selected = "01"
+    vis.selectedCounty = null;
+    vis.selected = null;
     vis.new_data = [];
 
     vis.dispatcher.on("chor_selectCounty", county => {
@@ -40,7 +39,7 @@ class Barchart {
         vis.selected = county.properties.STATE
         vis.selectedCounty = county
       } else {
-        vis.selected = "01" // placeholder
+        vis.selected = null
         vis.selectedCounty = null
       }
       vis.updateVis()
@@ -124,8 +123,7 @@ class Barchart {
 
     vis.new_data = [];
     vis.data.features.forEach(feature => {
-      if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
-
+      if ((vis.selected == null || String(feature.properties.STATE) == vis.selected) && vis.validRange(feature) && feature.properties.LSAD === 'County') {
         vis.new_data.push(feature)
       }
     });
@@ -168,7 +166,7 @@ class Barchart {
       .range([0, vis.new_data.length * 15])
 
     // Update scroll height
-    vis.svg.attr('height', vis.new_data.length*15)
+    vis.svg.attr('height', vis.new_data.length*15+vis.yScale.bandwidth()*2.5)
     vis.renderVis();
   }
 
@@ -189,7 +187,7 @@ class Barchart {
           if(vis.validRange(d)) {
             if (d === vis.selectedCounty) {
               vis.selectedCounty = null;
-              vis.selected = "01"  // placeholder
+              vis.selected = null;
             } else {
               vis.selectedCounty = d;
               vis.selected = vis.selectedCounty.properties.STATE
@@ -206,8 +204,12 @@ class Barchart {
             .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')
             .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
             .html(`
-              <div class="tooltip-title">${d.properties.NAME}</div>
+              <div class="tooltip-title">${d.properties.NAME}, ${d.properties.STNAME}</div>
               <div>${pop}</div>
+              <ul>
+                <li>${vis.startYear+2010} Population: ${d.properties.pop_list[vis.startYear]}</li>
+                <li>${vis.endYear+2010} Population: ${d.properties.pop_list[vis.endYear]}</li>
+              </ul>
             `);
         })
         .on('mouseleave', () => {
@@ -215,7 +217,9 @@ class Barchart {
         });
 
     // Update the axes because the underlying scales might have changed
-    vis.xAxisG.call(vis.xAxis);
+    vis.xAxisG.call(vis.xAxis).raise();
+    vis.xAxis.tickSize(-vis.svg.attr('height'))
+
     vis.yAxisG.call(vis.yAxis);
   }
 }
