@@ -9,7 +9,7 @@ class Barchart {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 550,
+    containerHeight: _config.containerHeight || 675,
     margin: _config.margin || {top: 30, right: 15, bottom: 15, left: 125},
     tooltipPadding: 10,
     legendBottom: 50,
@@ -38,9 +38,13 @@ class Barchart {
       if (county != null) {
         vis.selected = county.properties.STATE
         vis.selectedCounty = county
+        d3.select(".state")
+            .text(vis.selectedCounty.properties.STNAME)
       } else {
         vis.selected = null
         vis.selectedCounty = null
+        d3.select(".state")
+            .text("All States")
       }
       vis.updateVis()
     });
@@ -217,8 +221,8 @@ class Barchart {
         });
 
     // Update the axes because the underlying scales might have changed
-    vis.xAxisG.call(vis.xAxis).raise();
     vis.xAxis.tickSize(-vis.svg.attr('height'))
+    vis.xAxisG.call(vis.xAxis).raise();
 
     vis.yAxisG.call(vis.yAxis);
   }
