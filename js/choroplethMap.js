@@ -38,12 +38,11 @@ class ChoroplethMap {
         d3.select(".county")
           .text(vis.selectedCounty.properties.NAME)
       } else {
-        vis.selected = null // placeholder
+        vis.selectedCounty = null
         d3.select(".county")
           .text("Overall")
       }
       vis.updateVis()
-      console.log("DISPATCHER")
     });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
@@ -114,8 +113,17 @@ class ChoroplethMap {
       }
     };
 
-    vis.fillValue = d => vis.validRange(d)? vis.colorScale(vis.ratioValue(d)) : 'url(#lightstripe)';
-
+    vis.fillValue = d => {
+      if (vis.validRange(d)) {
+        if (d === vis.selectedCounty) {
+          return 'yellow';
+        } else {
+          return vis.colorScale(vis.ratioValue(d));
+        }
+      } else {
+        return 'url(#lightstripe)';
+      }
+    };
     vis.deviation = d3.deviation(vis.data["features"], d => {
       if(vis.validRange(d)) {
         return vis.ratioValue(d)
@@ -152,13 +160,19 @@ class ChoroplethMap {
         countyPath
         .on('mousemove', (event,d) => {
           const pop = (vis.validRange(d)) ? `Change in Population: <strong>${(vis.ratioValue(d).toFixed(2))}</strong>` : 'No data available';
+          const startPop = (vis.validRange(d))? d.properties.pop_list[vis.startYear]: 'N/A'
+          const endPop = (vis.validRange(d))? d.properties.pop_list[vis.endYear]: 'N/A'
           d3.select('#tooltip')
             .style('display', 'block')
             .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')   
             .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
             .html(`
-              <div class="tooltip-title">${d.properties.NAME}</div>
+              <div class="tooltip-title">${d.properties.NAME}, ${d.properties.STNAME}</div>
               <div>${pop}</div>
+              <ul>
+                <li>${vis.startYear+2010} Population: ${startPop}</li>
+                <li>${vis.endYear+2010} Population: ${endPop}</li>
+              </ul>
             `);
         })
         .on('mouseleave', () => {

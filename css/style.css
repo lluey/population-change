@@ -19,19 +19,17 @@
     float: left;
   }
 
+  .container {
+    height: 550px;
+    overflow-y: auto;
+  }
+
   .barchart {
     float: left;
   }
 
   .county:hover {
     stroke: #333;
-  }
-<<<<<<< Updated upstream
-=======
-
-  .border {
-    stroke: rgb(0, 0, 0);
-    stroke-width: 1.5;
   }
 
   .x-axis .tick line {
@@ -41,7 +39,6 @@
   .x-axis .domain {
     display: none;
   }
->>>>>>> Stashed changes
   
   #tooltip {
     position: absolute;
@@ -59,6 +56,10 @@
     color: #000;
     font-size: 14px;
     font-weight: 600;
+  }
+  #tooltip ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
   }
   
   .legend-title {

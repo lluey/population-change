@@ -9,8 +9,8 @@ class Barchart {
     this.config = {
     parentElement: _config.parentElement,
     containerWidth: _config.containerWidth || 500,
-    containerHeight: _config.containerHeight || 3000,
-    margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 100},
+    containerHeight: _config.containerHeight || 550,
+    margin: _config.margin || {top: 30, right: 15, bottom: 15, left: 125},
     tooltipPadding: 10,
     legendBottom: 50,
     legendLeft: 50,
@@ -30,19 +30,19 @@ class Barchart {
 
     let vis = this;
 
-    // vis.slider.onChange = () => vis.updateVis()
-
-    vis.selected = "01"
+    vis.selectedCounty = null;
+    vis.selected = null;
     vis.new_data = [];
 
     vis.dispatcher.on("chor_selectCounty", county => {
       if (county != null) {
         vis.selected = county.properties.STATE
+        vis.selectedCounty = county
       } else {
-        vis.selected = "01" // placeholder
+        vis.selected = null
+        vis.selectedCounty = null
       }
       vis.updateVis()
-      console.log("DISPATCHER")
     });
 
     // Calculate inner chart size. Margin specifies the space around the actual chart.
@@ -60,6 +60,9 @@ class Barchart {
         .attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`)
         .attr('class', 'barchart')
 
+    vis.colorScale = d3.scaleDiverging()
+      .interpolator(d3.interpolateRdBu)
+
     // Initialize scales
     vis.xScale = d3.scaleLinear()
         .range([0, vis.width]);
@@ -68,23 +71,20 @@ class Barchart {
         .paddingInner(0.15);
 
     // Initialize axes
-    vis.xAxis = d3.axisBottom(vis.xScale)
+    vis.xAxis = d3.axisTop(vis.xScale)
         .tickSizeOuter(1);
 
     vis.yAxis = d3.axisLeft(vis.yScale)
         .tickSizeOuter(1);
 
-    // Append empty x-axis group and move it to the bottom of the chart
+    // Append x-axis group
     vis.xAxisG = vis.chart.append('g')
-        .attr('class', 'axis x-axis')
-        .attr('transform', `translate(0,${vis.height})`);
-    
+        .attr('class', 'axis x-axis');
+
     // Append y-axis group 
     vis.yAxisG = vis.chart.append('g')
         .attr('class', 'axis y-axis');
 
-    // Append titles, legends and other static elements here
-    // ...
   }
 
   updateVis() {
@@ -113,7 +113,7 @@ class Barchart {
       } else {
           return 1
       }
-    };
+    }
 
     function aggregateName(d) {
         if(d.properties.NAME && d.properties.STNAME) {
@@ -121,15 +121,10 @@ class Barchart {
         }
     }
 
-
-
-    console.log("BEFORE:")
-    // console.log(vis.data.features)
     vis.new_data = [];
     vis.data.features.forEach(feature => {
-      if (String(feature.properties.STATE) == vis.selected && vis.validRange(feature)) {
+      if ((vis.selected == null || String(feature.properties.STATE) == vis.selected) && vis.validRange(feature) && feature.properties.LSAD === 'County') {
         vis.new_data.push(feature)
-        console.log("PUSHED")
       }
     });
 
@@ -139,17 +134,39 @@ class Barchart {
       }
     })
 
-    console.log("NEW:")
-    // console.log(vis.data)
+    vis.fillValue = d => {
+      if (vis.validRange(d)) {
+        if (d === vis.selectedCounty) {
+          return 'yellow';
+        } else {
+          return vis.colorScale(vis.ratioValue(d));
+        }
+      } else {
+        return 'url(#lightstripe)';
+      }
+    };
+
+    vis.deviation = d3.deviation(vis.new_data, d => {
+      if(vis.validRange(d)) {
+        return vis.ratioValue(d)
+      } else {
+        return 1
+      }
+    });
+
+    // Update color scale
+    vis.colorScale.domain([Math.max(1-3*vis.deviation, 0), 1,  1+3*vis.deviation]);
 
     vis.xValue = d => popExists(d)
     vis.yValue = d => aggregateName(d)
-    // console.log(vis.data.features[0])
+
     // Set the scale input domains
     vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
     vis.yScale.domain(vis.new_data.map(vis.yValue))
       .range([0, vis.new_data.length * 15])
 
+    // Update scroll height
+    vis.svg.attr('height', vis.new_data.length*15+vis.yScale.bandwidth()*2.5)
     vis.renderVis();
   }
 
@@ -165,11 +182,12 @@ class Barchart {
         .attr('height', vis.yScale.bandwidth())
         .attr('y', d => vis.yScale(vis.yValue(d)))
         .attr('x', 0)
+        .attr('fill', d => vis.fillValue(d))
         .on('click', (e, d) => {
           if(vis.validRange(d)) {
             if (d === vis.selectedCounty) {
               vis.selectedCounty = null;
-              vis.selected = "01"  // placeholder
+              vis.selected = null;
             } else {
               vis.selectedCounty = d;
               vis.selected = vis.selectedCounty.properties.STATE
@@ -186,8 +204,12 @@ class Barchart {
             .style('left', (event.pageX + vis.config.tooltipPadding) + 'px')
             .style('top', (event.pageY + vis.config.tooltipPadding) + 'px')
             .html(`
-              <div class="tooltip-title">${d.properties.NAME}</div>
+              <div class="tooltip-title">${d.properties.NAME}, ${d.properties.STNAME}</div>
               <div>${pop}</div>
+              <ul>
+                <li>${vis.startYear+2010} Population: ${d.properties.pop_list[vis.startYear]}</li>
+                <li>${vis.endYear+2010} Population: ${d.properties.pop_list[vis.endYear]}</li>
+              </ul>
             `);
         })
         .on('mouseleave', () => {
@@ -195,7 +217,9 @@ class Barchart {
         });
 
     // Update the axes because the underlying scales might have changed
-    vis.xAxisG.call(vis.xAxis);
+    vis.xAxisG.call(vis.xAxis).raise();
+    vis.xAxis.tickSize(-vis.svg.attr('height'))
+
     vis.yAxisG.call(vis.yAxis);
   }
 }
