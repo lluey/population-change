@@ -26,6 +26,22 @@
   .county:hover {
     stroke: #333;
   }
+<<<<<<< Updated upstream
+=======
+
+  .border {
+    stroke: rgb(0, 0, 0);
+    stroke-width: 1.5;
+  }
+
+  .x-axis .tick line {
+    stroke: lightgray;
+  }
+
+  .x-axis .domain {
+    display: none;
+  }
+>>>>>>> Stashed changes
   
   #tooltip {
     position: absolute;
