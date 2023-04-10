@@ -127,7 +127,9 @@ class Barchart {
 
     vis.new_data = [];
     vis.data.features.forEach(feature => {
-      if ((vis.selected == null || String(feature.properties.STATE) == vis.selected) && vis.validRange(feature) && feature.properties.LSAD === 'County') {
+      if ((vis.selected == null || feature.properties.STATE === vis.selected)
+          && vis.validRange(feature)
+          && (feature.properties.LSAD === 'County' || feature.properties.STATE === "22")) {
         vis.new_data.push(feature)
       }
     });
