@@ -36,7 +36,7 @@ class ChoroplethMap {
       if (county != null) {
         vis.selectedCounty = county
         d3.select(".county")
-          .text(vis.selectedCounty.properties.NAME)
+          .text("Relative to " + vis.selectedCounty.properties.NAME)
       } else {
         vis.selectedCounty = null
         d3.select(".county")
@@ -185,7 +185,7 @@ class ChoroplethMap {
                 } else {
                   vis.selectedCounty = d;
                   d3.select(".county")
-                      .text(d.properties.NAME)
+                      .text("Relative to " + d.properties.NAME)
                 }
                 vis.dispatcher.call('chor_selectCounty', e, vis.selectedCounty)
                 vis.updateVis()

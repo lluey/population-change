@@ -4,10 +4,20 @@
     font-weight: 900;
     color: #000;
   }
-  h2.date {
-    margin: 10px 0 0 0;
-    font-size: 1.3em;
-    font-weight: 700;
+
+  th {
+    padding-bottom: 15px;
+    font-size: 1.5em;
+    text-align: left;
+  }
+
+  td {
+    padding-right: 15px;
+  }
+
+  div.map,div.container {
+    outline:1px solid lightgray;
+    padding: 15px;
   }
 
   body {
@@ -20,7 +30,7 @@
   }
 
   .container {
-    height: 550px;
+    height: 675px;
     overflow-y: auto;
   }
 
