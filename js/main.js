@@ -8,6 +8,7 @@ d3.json("data/dataset_usa_geo_pop_list.json").then(data => {
     tooltip: true,
     scale: true,
     labels: true,
+    width: 1025,
     set: [2010, 2015],
     onChange: () => {
       choroplethMap.updateVis()
