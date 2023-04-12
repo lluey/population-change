@@ -14,6 +14,7 @@ d3.json("data/dataset_usa_geo_pop_list.json").then(data => {
       barchart.updateVis()
     }
   });
+    console.log(data)
     const choroplethMap = new ChoroplethMap({parentElement: '#map'}, dispatcher, data, slider);
     const barchart = new Barchart({parentElement: '#barchart'}, dispatcher, data, slider);
 

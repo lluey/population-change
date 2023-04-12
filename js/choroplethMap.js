@@ -85,12 +85,23 @@ class ChoroplethMap {
         .attr('dy', '.35em')
         .attr('y', -10)
         .text('Pop. change per county')
-    
 
 
+    function handleZoom(e) {
+      d3.select("svg g")
+      .attr("transform", e.transform)
+    }
+
+    let zoom = d3.zoom()
+    .scaleExtent([1,5])
+    .translateExtent([[0,0],[vis.width, vis.height]])
+    .on("zoom", handleZoom)
+
+    d3.select("svg").call(zoom)
 
     vis.updateVis();
   }
+
 
 
   updateVis() {
@@ -155,7 +166,13 @@ class ChoroplethMap {
       .join('path')
         .attr('class', 'county')
         .attr('d', vis.geoPath)
-        .attr('fill', d => vis.fillValue(d));
+
+        countyPath.transition()
+        .duration(1000)
+        .attr('fill', d => vis.fillValue(d))
+
+
+
 
         countyPath
         .on('mousemove', (event,d) => {

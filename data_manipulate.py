@@ -1,9 +1,8 @@
-import csv, json, copy
+import csv, json
 
-with open("data/usa_geo.json", encoding = "ISO-8859-1") as geojson, open("data/co-est2020-alldata.csv", encoding = "ISO-8859-1") as dataset:
+with open("data/usa_geo.json", encoding = "ISO-8859-1") as geojson, open("data/population_dataset_2010_2021.csv", encoding = "ISO-8859-1") as dataset:
     county_boundaries = json.load(geojson)
     pop_data = list(csv.DictReader(dataset))
-
 
     for feature in county_boundaries["features"]:
         geojson_geo_id = feature["properties"]["STATE"] + feature["properties"]["COUNTY"]
