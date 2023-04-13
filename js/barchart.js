@@ -194,10 +194,14 @@ class Barchart {
             if (d === vis.selectedCounty) {
               vis.selectedCounty = null;
               vis.selected = null;
+              d3.select(".state")
+                  .text("All States")
 
             } else {
               vis.selectedCounty = d;
               vis.selected = vis.selectedCounty.properties.STATE
+              d3.select(".state")
+                  .text(vis.selectedCounty.properties.STNAME)
             }
             vis.dispatcher.call('bar_selectCounty', e, vis.selectedCounty)
             vis.updateVis()
