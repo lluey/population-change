@@ -239,10 +239,10 @@ class ChoroplethMap {
 
     vis.legendRect.attr('fill', 'url(#legend-gradient)')
 
-    vis.chart.selectAll('.state-border')
+    vis.chart.selectAll('.border')
       .data(vis.state_borders["features"])
     .join('path')
-      .attr('class', 'state-border')
+      .attr('class', 'border')
       .attr('d', vis.geoPath)
 	  	.attr("fill", "none")
 	  	.attr("stroke", "black")
