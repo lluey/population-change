@@ -5,7 +5,7 @@ class ChoroplethMap {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _dispatcher, _data, _slider) {
+  constructor(_config, _dispatcher, _data, _state_borders, _slider) {
     this.config = {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
@@ -23,6 +23,7 @@ class ChoroplethMap {
     this.endYear = 10;
     this.selectedCounty = null;
     this.slider = _slider;
+    this.state_borders = _state_borders;
     this.initVis();
   }
 
@@ -171,9 +172,6 @@ class ChoroplethMap {
         .duration(1000)
         .attr('fill', d => vis.fillValue(d))
 
-
-
-
         countyPath
         .on('mousemove', (event,d) => {
           const pop = (vis.validRange(d)) ? `Change in Population: <strong>${(vis.ratioValue(d).toFixed(2))}</strong>` : 'No data available';
@@ -203,11 +201,15 @@ class ChoroplethMap {
                   vis.selectedCounty = null;
                   d3.select(".county")
                       .text("Overall")
+
+                // a different county gets selected , hence a county is currently selected
                 } else {
+
                   vis.selectedCounty = d;
                   d3.select(".county")
                       .text("Relative to " + d.properties.NAME)
                 }
+
                 vis.dispatcher.call('chor_selectCounty', e, vis.selectedCounty)
                 vis.updateVis()
                 d3.select('#tooltip').style('display', 'none');
@@ -237,15 +239,14 @@ class ChoroplethMap {
 
     vis.legendRect.attr('fill', 'url(#legend-gradient)')
 
-    d3.json("data/cb_2018_us_state_20m.geojson").then((stateData) => {
-      const borders = vis.chart.selectAll('.border')
-      .data(stateData["features"])
+    vis.chart.selectAll('.border')
+      .data(vis.state_borders["features"])
     .join('path')
       .attr('class', 'border')
       .attr('d', vis.geoPath)
 	  	.attr("fill", "none")
 	  	.attr("stroke", "black")
-    })
+
     
   }
 }

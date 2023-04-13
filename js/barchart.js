@@ -194,6 +194,7 @@ class Barchart {
             if (d === vis.selectedCounty) {
               vis.selectedCounty = null;
               vis.selected = null;
+
             } else {
               vis.selectedCounty = d;
               vis.selected = vis.selectedCounty.properties.STATE
@@ -227,5 +228,6 @@ class Barchart {
     vis.xAxisG.call(vis.xAxis).raise();
 
     vis.yAxisG.call(vis.yAxis);
+
   }
 }
