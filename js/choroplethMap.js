@@ -10,7 +10,7 @@ class ChoroplethMap {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
       containerHeight: _config.containerHeight || 600,
-      margin: _config.margin || {top: 0, right: 0, bottom: 0, left: 0},
+      margin: _config.margin || {top: 10, right: 0, bottom: 0, left: 10},
       tooltipPadding: 10,
       legendBottom: 50,
       legendLeft: 50,
@@ -86,8 +86,23 @@ class ChoroplethMap {
         .attr('y', -10)
         .text('Pop. change per county')
 
+
+    function handleZoom(e) {
+      d3.select("svg g")
+      .attr("transform", e.transform)
+    }
+
+    let zoom = d3.zoom()
+    .scaleExtent([1,5])
+    .translateExtent([[0,0],[vis.width, vis.height]])
+    .on("zoom", handleZoom)
+
+    d3.select("svg").call(zoom)
+
     vis.updateVis();
   }
+
+
 
   updateVis() {
     let vis = this;
@@ -151,7 +166,13 @@ class ChoroplethMap {
       .join('path')
         .attr('class', 'county')
         .attr('d', vis.geoPath)
-        .attr('fill', d => vis.fillValue(d));
+
+        countyPath.transition()
+        .duration(1000)
+        .attr('fill', d => vis.fillValue(d))
+
+
+
 
         countyPath
         .on('mousemove', (event,d) => {
@@ -215,5 +236,20 @@ class ChoroplethMap {
         .attr('stop-color', d => d.color);
 
     vis.legendRect.attr('fill', 'url(#legend-gradient)')
+
+    d3.json("data/cb_2018_us_state_20m.geojson").then((stateData) => {
+      const borders = vis.chart.selectAll('.border')
+      .data(stateData["features"])
+    .join('path')
+      .attr('class', 'border')
+      .attr('d', vis.geoPath)
+	  	.attr("fill", "none")
+	  	.attr("stroke", "black")
+    })
+    
   }
 }
+
+
+
+
