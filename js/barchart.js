@@ -111,7 +111,7 @@ class Barchart {
       }
     };
 
-    function popExists(d) {
+    vis.xValue = d => {
       if(vis.validRange(d)) {
           return d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear]
       } else {
@@ -119,7 +119,7 @@ class Barchart {
       }
     }
 
-    function aggregateName(d) {
+    vis.aggregateName = d => {
         if(d.properties.NAME && d.properties.STNAME) {
             return d.properties.NAME + ", " + d.properties.STNAME
         }
@@ -163,12 +163,9 @@ class Barchart {
     // Update color scale
     vis.colorScale.domain([Math.max(1-3*vis.deviation, 0), 1,  1+3*vis.deviation]);
 
-    vis.xValue = d => popExists(d)
-    vis.yValue = d => aggregateName(d)
-
     // Set the scale input domains
     vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
-    vis.yScale.domain(vis.new_data.map(vis.yValue))
+    vis.yScale.domain(vis.new_data.map(vis.aggregateName))
       .range([0, vis.new_data.length * 15])
 
     // Update scroll height
@@ -186,7 +183,7 @@ class Barchart {
         .attr('class', 'bar')
         .attr('width', d => vis.xScale(vis.xValue(d)))
         .attr('height', vis.yScale.bandwidth())
-        .attr('y', d => vis.yScale(vis.yValue(d)))
+        .attr('y', d => vis.yScale(vis.aggregateName(d)))
         .attr('x', 0)
         .attr('fill', d => vis.fillValue(d))
         .on('click', (e, d) => {
