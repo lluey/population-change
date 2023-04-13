@@ -111,7 +111,7 @@ class Barchart {
       }
     };
 
-    vis.popExists = d => {
+    vis.xValue = d => {
       if(vis.validRange(d)) {
           return d.properties.pop_list[vis.endYear] / d.properties.pop_list[vis.startYear]
       } else {
@@ -164,7 +164,7 @@ class Barchart {
     vis.colorScale.domain([Math.max(1-3*vis.deviation, 0), 1,  1+3*vis.deviation]);
 
     // Set the scale input domains
-    vis.xScale.domain([0, d3.max(vis.new_data, vis.popExists)]);
+    vis.xScale.domain([0, d3.max(vis.new_data, vis.xValue)]);
     vis.yScale.domain(vis.new_data.map(vis.aggregateName))
       .range([0, vis.new_data.length * 15])
 
@@ -181,7 +181,7 @@ class Barchart {
         .data(vis.new_data)
         .join('rect')
         .attr('class', 'bar')
-        .attr('width', d => vis.xScale(vis.popExists(d)))
+        .attr('width', d => vis.xScale(vis.xValue(d)))
         .attr('height', vis.yScale.bandwidth())
         .attr('y', d => vis.yScale(vis.aggregateName(d)))
         .attr('x', 0)
